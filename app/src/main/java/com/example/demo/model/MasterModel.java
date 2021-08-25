@@ -30,7 +30,7 @@ public class MasterModel {
         this.data = data;
     }
 
-   public static class DataListModel {
+    public static class DataListModel {
         @SerializedName("memes")
         @Expose
         ArrayList<Memes> memes;
@@ -44,7 +44,7 @@ public class MasterModel {
         }
     }
 
-   static class Memes {
+    public static class Memes {
         @SerializedName("id")
         @Expose
         String id;

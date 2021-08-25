@@ -1,6 +1,7 @@
 package com.example.demo.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.demo.R;
 import com.example.demo.model.MasterModel;
+import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 
@@ -36,7 +38,9 @@ public class MainDataListAdapter extends RecyclerView.Adapter<MainDataListAdapte
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         MasterModel masterModel=dataListModelArrayList.get(position);
-        //holder.textView.setText(masterModel.getData());
+        holder.textView.setText(masterModel.getData().getMemes().get(position).getId());
+        Picasso.get().load(masterModel.getData().getMemes().get(position).getUrl()).into(holder.imageView);
+        Log.d("adapter",masterModel.getData().getMemes().get(position).getId());
 
     }
 

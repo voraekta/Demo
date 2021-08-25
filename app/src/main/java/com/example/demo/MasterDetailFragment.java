@@ -5,17 +5,21 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import com.example.demo.R;
 import com.example.demo.adapter.MainDataListAdapter;
 import com.example.demo.model.MasterModel;
 import com.google.gson.Gson;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,16 +29,15 @@ import okhttp3.Callback;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 
 public class MasterDetailFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
     private RecyclerView rvMain;
     private MainDataListAdapter mainDataListAdapter;
-    String url = "https://api.imgflip.com/get_memes";
     ArrayList<MasterModel> dataListModelArrayList;
     SwipeRefreshLayout mSwipeRefreshLayout;
+    String myResponse;
 
     public MasterDetailFragment() {
         // Required empty public constructor
@@ -68,35 +71,58 @@ public class MasterDetailFragment extends Fragment implements SwipeRefreshLayout
 
         final Gson gson = new Gson();
         OkHttpClient client = new OkHttpClient();
-
-        // GET
-        Request get = new Request.Builder()
+        String url = "https://api.imgflip.com/get_memes";
+        Request request = new Request.Builder()
                 .url(url)
                 .build();
-
-        client.newCall(get).enqueue(new Callback() {
+        client.newCall(request).enqueue(new Callback() {
             @Override
-            public void onFailure(Call call, IOException e) {
+            public void onFailure(@NotNull Call call, @NotNull IOException e) {
                 e.printStackTrace();
             }
 
             @Override
-            public void onResponse(Call call, Response response) {
-                try {
-                    ResponseBody responseBody = response.body();
-                    Log.d("responses", responseBody.toString());
-                    if (!response.isSuccessful()) {
-                        throw new IOException("Unexpected code " + response);
-                    }
-                    MasterModel.DataListModel user = gson.fromJson(response.body().charStream(), MasterModel.DataListModel.class);
-                    Log.d("data", String.valueOf(user.getMemes()));
-                    mainDataListAdapter = new MainDataListAdapter(getContext(), dataListModelArrayList);
-                    rvMain.setAdapter(mainDataListAdapter);
-                } catch (Exception e) {
-                    e.printStackTrace();
+            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    myResponse = response.body().string();
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            MasterModel masterModel = gson.fromJson(myResponse, MasterModel.class);
+                            Log.d("dataa", String.valueOf(masterModel.getData().getMemes().size()));
+                            for (int i = 0; i < masterModel.getData().getMemes().size(); i++) {
+                                dataListModelArrayList.add(masterModel);
+                            }
+                            mainDataListAdapter = new MainDataListAdapter(getContext(), dataListModelArrayList);
+                            LinearLayoutManager mLayoutManager = new LinearLayoutManager(getContext());
+                            mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+                            rvMain.setLayoutManager(mLayoutManager);
+                            rvMain.setAdapter(mainDataListAdapter);
+                        }
+                    });
                 }
             }
         });
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT | ItemTouchHelper.DOWN | ItemTouchHelper.UP) {
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                Toast.makeText(getContext(), "on Move", Toast.LENGTH_SHORT).show();
+                return false;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                Toast.makeText(getContext(), "on Swiped ", Toast.LENGTH_SHORT).show();
+                int position = viewHolder.getAdapterPosition();
+                dataListModelArrayList.remove(position);
+                mainDataListAdapter.notifyItemRemoved(position);
+                mainDataListAdapter.notifyDataSetChanged();
+
+            }
+        };
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(rvMain);
     }
 
     @Override
